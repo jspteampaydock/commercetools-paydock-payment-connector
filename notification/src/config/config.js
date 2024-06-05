@@ -65,8 +65,7 @@ async function getPaydockConfig(type = 'all') {
   switch (type) {
     case 'connection':
       // eslint-disable-next-line no-case-declarations
-      const isSandboxConnection = paydockConfig['sandbox']?.sandbox_mode ?? false
-      if (isSandboxConnection === 'Yes') {
+      if (paydockConfig['sandbox']?.sandbox_mode) {
         paydockConfig['sandbox'].api_url = 'https://api-sandbox.paydock.com'
         return paydockConfig['sandbox'] ?? {}
       }

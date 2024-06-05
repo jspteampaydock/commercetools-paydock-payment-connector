@@ -103,12 +103,6 @@ async function getCommercetoolsStatusesByPaydockStatus(paydockStatus) {
             orderPaymentState = 'Paid'
             orderState = 'Open'
             break
-        case 'paydock-pending':
-        case 'paydock-authorize':
-        case 'paydock-requested':
-            orderPaymentState = 'Pending'
-            orderState = 'Open'
-            break
         case 'paydock-cancelled':
         case 'paydock-failed':
             orderPaymentState = 'Failed'

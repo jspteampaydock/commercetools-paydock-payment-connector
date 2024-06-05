@@ -117,8 +117,7 @@ async function processFraudNotification(event, payment, notification, ctpClient)
 
     let updateActions = [];
     let operation = notification.type
-    operation = operation ? operation.toLowerCase() : 'undefined'
-    operation = operation.charAt(0).toUpperCase() + operation.slice(1)
+    operation = operation ?  operation.charAt(0).toUpperCase() + operation.slice(1).toLowerCase() : 'Undefined';
 
     if (notification.status !== 'complete') {
         result.message = operation
@@ -149,41 +148,8 @@ async function processFraudNotification(event, payment, notification, ctpClient)
         if (cacheData) {
             cacheData = JSON.parse(cacheData)
 
-            const paymentSource = notification.customer.payment_source
-            if (cacheData.gateway_id) {
-                paymentSource.gateway_id = cacheData.gateway_id
-            }
-
+            const request = await generateChargeRequest(notification, cacheData, fraudChargeId)
             const isDirectCharge = cacheData.capture
-
-
-            const request = {
-                amount: notification.amount,
-                reference: notification.reference,
-                currency: notification.currency,
-                customer: {
-                    first_name: cacheData.billingAddress.firstName,
-                    last_name: cacheData.billingAddress.lastName,
-                    email: cacheData.billingAddress.email,
-                    phone: cacheData.billingAddress.phone
-                },
-                fraud_charge_id: fraudChargeId,
-                capture: isDirectCharge,
-                authorization: !isDirectCharge
-            }
-            request.customer.payment_source = paymentSource
-            if (cacheData.charge3dsId) {
-                request._3ds_charge_id = cacheData.charge3dsId
-            }
-
-            if (cacheData._3ds) {
-                request._3ds = cacheData._3ds
-            }
-
-            if (cacheData.ccv) {
-                request.customer.payment_source.card_ccv = cacheData.ccv
-            }
-
             await customObjectsUtils.removeItem(cacheName)
             const response = await createCharge(request, {directCharge: isDirectCharge}, true)
             chargeId = response?.resource?.data?._id ?? 0
@@ -252,7 +218,7 @@ async function processFraudNotification(event, payment, notification, ctpClient)
                     value: chargeId
                 }
             ]
-            
+
             try {
                 await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
                 await updateOrderStatus(ctpClient, currentPayment.id, commerceToolsPaymentStatus, 'Open');
@@ -300,6 +266,46 @@ async function processFraudNotification(event, payment, notification, ctpClient)
         }
     }
     return result
+}
+
+
+async function generateChargeRequest(notification, cacheData, fraudChargeId) {
+    const paymentSource = notification.customer.payment_source
+
+    if (cacheData.gateway_id) {
+        paymentSource.gateway_id = cacheData.gateway_id
+    }
+
+    const isDirectCharge = cacheData.capture
+
+
+    const request = {
+        amount: notification.amount,
+        reference: notification.reference,
+        currency: notification.currency,
+        customer: {
+            first_name: cacheData.billingAddress.firstName,
+            last_name: cacheData.billingAddress.lastName,
+            email: cacheData.billingAddress.email,
+            phone: cacheData.billingAddress.phone
+        },
+        fraud_charge_id: fraudChargeId,
+        capture: isDirectCharge,
+        authorization: !isDirectCharge
+    }
+    request.customer.payment_source = paymentSource
+    if (cacheData.charge3dsId) {
+        request._3ds_charge_id = cacheData.charge3dsId
+    }
+
+    if (cacheData._3ds) {
+        request._3ds = cacheData._3ds
+    }
+
+    if (cacheData.ccv) {
+        request.customer.payment_source.card_ccv = cacheData.ccv
+    }
+    return request
 }
 
 async function createCharge(data, params = {}, returnObject = false) {
@@ -556,7 +562,7 @@ async function getNewStatuses(notification) {
             commerceToolsPaymentStatus = 'Pending'
             orderPaymentStatus = 'Open'
     }
-    
+
     return {status: paydockPaymentStatus, paymentStatus: commerceToolsPaymentStatus, orderStatus: orderPaymentStatus}
 }
 

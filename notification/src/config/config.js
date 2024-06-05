@@ -39,11 +39,11 @@ async function getPaydockApiUrl(){
 
 function getNotificationConfig() {
   return {
-    clientId: config.clientId ?? 'kjQW8-nXHq4CfKVdFzEjUl6c',
-    clientSecret: config.clientSecret ?? 'Z1B_FP71UbE8xwcdAy_Q5FR7ztHSZZRJ',
-    projectKey: config.projectKey ?? 'paydockecomm',
-    apiUrl: config.apiUrl ?? 'https://api.europe-west1.gcp.commercetools.com',
-    authUrl: config.authUrl ?? 'https://auth.europe-west1.gcp.commercetools.com'
+    clientId: config.clientId,
+    clientSecret: config.clientSecret,
+    projectKey: config.projectKey,
+    apiUrl: config.apiUrl,
+    authUrl: config.authUrl
   }
 }
 

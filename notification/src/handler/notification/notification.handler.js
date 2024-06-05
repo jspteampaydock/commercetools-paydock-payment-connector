@@ -117,7 +117,7 @@ async function processFraudNotification(event, payment, notification, ctpClient)
 
     let updateActions = [];
     let operation = notification.type
-    operation = operation ?  operation.charAt(0).toUpperCase() + operation.slice(1).toLowerCase() : 'Undefined';
+    operation = operation ? operation.charAt(0).toUpperCase() + operation.slice(1).toLowerCase() : 'Undefined';
 
     if (notification.status !== 'complete') {
         result.message = operation
@@ -460,31 +460,26 @@ async function processRefundSuccessNotification(event, payment, notification, ct
 }
 
 
-
 async function updateOrderStatus(
     ctpClient,
     id,
     paymentStatus,
     orderStatus
 ) {
-    try {
-        let order = await ctpClient.fetchOrderByNymber(ctpClient.builder.orders, id)
-        if(order){
-            order = order.body
-            const updateOrderActions = [
-                {
-                    action: 'changePaymentState',
-                    paymentState: paymentStatus,
-                },
-                {
-                    action: 'changeOrderState',
-                    orderState: orderStatus
-                }
-            ]
-            await ctpClient.update(ctpClient.builder.orders, order.id, order.version, updateOrderActions)
-        }
-    } catch (error) {
-        console.log(error)
+    let order = await ctpClient.fetchOrderByNymber(ctpClient.builder.orders, id)
+    if (order) {
+        order = order.body
+        const updateOrderActions = [
+            {
+                action: 'changePaymentState',
+                paymentState: paymentStatus,
+            },
+            {
+                action: 'changeOrderState',
+                orderState: orderStatus
+            }
+        ]
+        await ctpClient.update(ctpClient.builder.orders, order.id, order.version, updateOrderActions)
     }
 }
 

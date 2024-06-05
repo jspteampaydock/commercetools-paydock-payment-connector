@@ -35,7 +35,6 @@ async function callPaydock(url, data, httpMethod) {
     const responseData = await response.json();
     return responseData?.resource?.data ?? {};
   } catch (error) {
-    console.error("Error fetching data: ", error);
     return {};
   }
 }

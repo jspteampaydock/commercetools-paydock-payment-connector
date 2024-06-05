@@ -21,7 +21,6 @@ async function getItem(key) {
         const {body} = await ctpClient.fetchByContainerAndKey(ctpClient.builder.customObjects, container, key);
         return body.value;
     } catch (error) {
-        console.log(error);
         return null;
     }
 }

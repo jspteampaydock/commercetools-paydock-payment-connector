@@ -565,12 +565,12 @@ async function getPaydockStatusByAPIResponse(isDirectCharge, paymentStatus) {
     let paydockStatus;
     if (paymentStatus === 'Success') {
         if (isDirectCharge) {
-            paydockStatus = 'paydock-paid';
+            paydockStatus = c.STATUS_TYPES.PAID;
         } else {
-            paydockStatus = 'paydock-authorize';
+            paydockStatus = c.STATUS_TYPES.AUTHORIZE;
         }
     } else {
-        paydockStatus = 'paydock-failed';
+        paydockStatus = c.STATUS_TYPES.FAILED;
     }
     return paydockStatus;
 }
@@ -1185,7 +1185,6 @@ async function insertOrUpdateUserVaultToken({unique_key, user_id, customer_id, t
 
         return {success: false};
     } catch (error) {
-        console.error("Failed to fetch customer custom field:", error);
         return {success: false, error: error.message};
     }
 }
@@ -1209,7 +1208,6 @@ async function getCustomerIdByVaultToken(user_id, vault_token) {
 
         return customerId;
     } catch (error) {
-        console.error("Failed to fetch customer custom field:", error);
         return customerId;
     }
 }
@@ -1473,7 +1471,6 @@ async function getUserVaultTokens(user_id) {
 
         return result;
     } catch (error) {
-        console.error("Failed to fetch customer custom field:", error);
         return result;
     }
 }

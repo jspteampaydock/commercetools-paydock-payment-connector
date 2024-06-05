@@ -18,9 +18,6 @@ function deleteCustomFieldAction(name) {
         value: null
     }
 }
-
-
-
 function getPaydockStatus(paymentMethod, responseBodyJson) {
     let paydockStatus;
     switch (paymentMethod) {

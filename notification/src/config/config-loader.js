@@ -1,4 +1,3 @@
-// import rc from 'rc'
 import {config} from "dotenv";
 
 function loadConfig() {
@@ -7,7 +6,6 @@ function loadConfig() {
     return loadFromPaydockIntegrationEnvVar()
   }
   return {}
-  // return loadFromExternalFile()
 }
 
 function loadFromPaydockIntegrationEnvVar() {
@@ -15,7 +13,8 @@ function loadFromPaydockIntegrationEnvVar() {
     return JSON.parse(process.env.PAYDOCK_INTEGRATION_CONFIG)
   } catch (e) {
     throw new Error(
-        'Paydock integration configuration is not provided in the JSON format',
+        // eslint-disable-next-line max-len
+        `Paydock integration configuration is not provided in the JSON format${ process.env.PAYDOCK_INTEGRATION_CONFIG}`,
     )
   }
 }

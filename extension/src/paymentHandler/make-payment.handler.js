@@ -99,16 +99,16 @@ async function getCommercetoolsStatusesByPaydockStatus(paydockStatus) {
     let orderState
 
     switch (paydockStatus) {
-        case 'paydock-paid':
+        case c.STATUS_TYPES.PAID:
             orderPaymentState = 'Paid'
             orderState = 'Open'
             break
-        case 'paydock-cancelled':
-        case 'paydock-failed':
+        case c.STATUS_TYPES.CANCELLED:
+        case c.STATUS_TYPES.FAILED:
             orderPaymentState = 'Failed'
             orderState = 'Cancelled'
             break
-        case 'paydock-refunded':
+        case c.STATUS_TYPES.REFUNDED:
             orderPaymentState = 'Paid'
             orderState = 'Cancelled'
             break

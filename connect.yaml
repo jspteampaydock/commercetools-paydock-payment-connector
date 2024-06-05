@@ -12,7 +12,7 @@ deployAs:
     applicationType: service
     endpoint: /
     scripts:
-      postDeploy: npm install && npm run setup-resources
+      postDeploy: npm install
     configuration:
       securedConfiguration:
         - key: PAYDOCK_INTEGRATION_CONFIG

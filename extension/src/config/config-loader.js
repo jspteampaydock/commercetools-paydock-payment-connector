@@ -20,14 +20,4 @@ function loadFromPaydockIntegrationEnvVar() {
   }
 }
 
-/* function loadFromExternalFile() {
-  const appName = 'extension'
-  const configFromExternalFile = rc(appName)
-  const hasConfig = configFromExternalFile?.configs?.length > 0
-  if (!hasConfig) {
-    throw new Error('Paydock integration configuration is not provided.')
-  }
-  return configFromExternalFile
-} */
-
 export { loadConfig }

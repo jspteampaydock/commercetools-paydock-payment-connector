@@ -180,6 +180,7 @@ async function cardFlow({configurations, input, amount, currency, vaultToken, cu
 
     switch (true) {
         case (configurations.card_card_save === 'Enable' && !!customerId):
+        case (configurations.card_card_save === 'Enable' && configurations.card_card_method_save !== 'Vault token' && input.SaveCard):
             result = await cardCustomerCharge({
                 configurations,
                 input,
@@ -214,16 +215,6 @@ async function cardFlow({configurations, input, amount, currency, vaultToken, cu
             break;
         case (configurations.card_fraud === 'Standalone Fraud' || configurations.card_fraud === 'In-built Fraud'):
             result = await cardFraudCharge({
-                configurations,
-                input,
-                amount,
-                currency,
-                vaultToken,
-                customerId
-            });
-            break;
-        case (configurations.card_card_save === 'Enable' && configurations.card_card_method_save !== 'Vault token' && input.SaveCard):
-            result = await cardCustomerCharge({
                 configurations,
                 input,
                 amount,
@@ -386,11 +377,16 @@ async function cardFraud3DsStandaloneCharge({configurations, input, amount, curr
         cacheData.ccv = input.cvv;
     }
 
+    const billingFirstName = input.billing_first_name ?? '';
+    const billingLastName = input.billing_last_name ?? '';
+    const billingEmail = input.billing_email ?? '';
+    const billingPhone = input.billing_phone ?? '';
+
     const fraudData = getAdditionalFields(input);
-    fraudData.first_name = input.billing_first_name ?? '';
-    fraudData.last_name = input.billing_last_name ?? '';
-    fraudData.email = input.billing_email ?? '';
-    fraudData.phone = input.billing_phone ?? '';
+    fraudData.first_name = billingFirstName;
+    fraudData.last_name = billingLastName;
+    fraudData.email = billingEmail;
+    fraudData.phone = billingPhone;
 
     const isDirectCharge = configurations.card_direct_charge === 'Enable';
 
@@ -399,10 +395,10 @@ async function cardFraud3DsStandaloneCharge({configurations, input, amount, curr
         reference: input.orderId ?? '',
         currency,
         customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
+            first_name: billingFirstName,
+            last_name: billingLastName,
+            email: billingEmail,
+            phone: billingPhone,
             payment_source
         },
         fraud: {
@@ -417,10 +413,10 @@ async function cardFraud3DsStandaloneCharge({configurations, input, amount, curr
 
     if (result.status === 'Success') {
         cacheData.billingAddress = {
-            firstName: input.billing_first_name ?? '',
-            lastName: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? ''
+            firstName: billingFirstName,
+            lastName: billingLastName,
+            email: billingEmail,
+            phone: billingPhone,
         };
 
         await customObjectsUtils.setItem(`paydock_fraud_${input.orderId}`, JSON.stringify(cacheData));
@@ -458,15 +454,20 @@ async function cardFraudStandalone3DsInBuildCharge({configurations, input, amoun
     const fraudData = getAdditionalFields(input);
     fraudData.amount = amount;
 
+    const billingFirstName = input.billing_first_name ?? '';
+    const billingLastName = input.billing_last_name ?? '';
+    const billingEmail = input.billing_email ?? '';
+    const billingPhone = input.billing_phone ?? '';
+
     const request = {
         amount,
         reference: input.orderId ?? '',
         currency,
         customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
+            first_name: billingFirstName,
+            last_name: billingLastName,
+            email: billingEmail,
+            phone: billingPhone,
             payment_source
         },
         fraud: {
@@ -479,10 +480,10 @@ async function cardFraudStandalone3DsInBuildCharge({configurations, input, amoun
 
     if (result.status === 'Success') {
         cacheData.billingAddress = {
-            firstName: input.billing_first_name ?? '',
-            lastName: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? ''
+            firstName: billingFirstName,
+            lastName: billingLastName,
+            email: billingEmail,
+            phone: billingPhone
         };
 
         await customObjectsUtils.setItem(`paydock_fraud_${input.orderId}`, JSON.stringify(cacheData));
@@ -555,13 +556,13 @@ async function card3DsCharge({configurations, input, amount, currency, vaultToke
             type: 'card'
         })
     }
-    const isDirectCharge =  configurations.card_direct_charge === 'Enable';
+    const isDirectCharge = configurations.card_direct_charge === 'Enable';
     result.paydockStatus = await getPaydockStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
 async function getPaydockStatusByAPIResponse(isDirectCharge, paymentStatus) {
-    let paydockStatus = 'paydock-failed'
+    let paydockStatus;
     if (paymentStatus === 'Success') {
         if (isDirectCharge) {
             paydockStatus = 'paydock-paid';
@@ -702,15 +703,20 @@ async function cardFraudInBuildCharge({configurations, input, amount, currency, 
 
     const isDirectCharge = configurations.card_direct_charge === 'Enable';
 
+    const billingFirstName = input.billing_first_name ?? '';
+    const billingLastName = input.billing_last_name ?? '';
+    const billingEmail = input.billing_email ?? '';
+    const billingPhone = input.billing_phone ?? '';
+
     const request = {
         amount,
         reference: input.orderId ?? '',
         currency,
         customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
+            first_name: billingFirstName,
+            last_name: billingLastName,
+            email: billingEmail,
+            phone: billingPhone,
             payment_source
         },
         fraud: {
@@ -718,17 +724,17 @@ async function cardFraudInBuildCharge({configurations, input, amount, currency, 
             data: {
                 transaction: {
                     billing: {
-                        customerEmailAddress: input.billing_email ?? '',
-                        shippingFirstName: input.billing_first_name ?? '',
-                        shippingLastName: input.billing_last_name ?? '',
+                        customerEmailAddress: billingEmail,
+                        shippingFirstName: billingFirstName,
+                        shippingLastName: billingLastName,
                         shippingAddress1: input.billing_address_1 ?? '',
                         shippingAddress2: input.billing_address_2 ?? (input.billing_address_1 ?? ''),
                         shippingCity: input.billing_city ?? '',
                         shippingState: input.billing_state ?? '',
                         shippingPostcode: input.billing_postcode ?? '',
                         shippingCountry: input.billing_country ?? '',
-                        shippingPhone: input.billing_phone ?? '',
-                        shippingEmail: input.billing_email ?? '',
+                        shippingPhone: billingPhone,
+                        shippingEmail: billingEmail,
                     }
                 }
             }
@@ -769,11 +775,6 @@ async function cardFraudStandaloneCharge({configurations, input, amount, currenc
 
     const fraudData = getAdditionalFields(input);
     fraudData.amount = amount;
-    // fraudData.first_name = input.billing_first_name ?? '';
-    // fraudData.last_name = input.billing_last_name ?? '';
-    // fraudData.email = input.billing_email ?? '';
-    // fraudData.phone = input.billing_phone ?? '';
-
     const isDirectCharge = configurations.card_direct_charge === 'Enable';
 
     const request = {
@@ -836,11 +837,6 @@ async function cardCustomerCharge({
     if (configurations.card_gateway_id) {
         payment_source.gateway_id = configurations.card_gateway_id;
     }
-    //
-    // if (input.cvv) {
-    //     payment_source.card_ccv = input.cvv;
-    // }
-
     const isDirectCharge = configurations.card_direct_charge === 'Enable';
 
     const request = {
@@ -1004,8 +1000,7 @@ async function createCustomer(data) {
     }
 }
 
-async function createCustomerAndSaveVaultToken({configurations, input, vaultToken, type}) {
-    let customerId = null;
+async function generateCustomerRequest(input, vaultToken, type, configurations) {
     const customerRequest = {
         first_name: input.billing_first_name ?? '',
         last_name: input.billing_last_name ?? '',
@@ -1014,15 +1009,20 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
         payment_source: {
             vault_token: vaultToken
         }
-    };
+    }
 
     if (type === 'card' && configurations.card_card_method_save === 'Customer with Gateway ID' && configurations.card_gateway_id) {
         customerRequest.payment_source.gateway_id = configurations.card_gateway_id;
     }
-
     if (type === 'bank_accounts' && configurations.bank_accounts_bank_method_save === 'Customer with Gateway ID' && configurations.bank_accounts_gateway_id) {
         customerRequest.payment_source.gateway_id = configurations.bank_accounts_gateway_id;
     }
+    return customerRequest;
+}
+
+async function createCustomerAndSaveVaultToken({configurations, input, vaultToken, type}) {
+    let customerId = null;
+    const customerRequest = await generateCustomerRequest(input, vaultToken, type, configurations);
     const customerResponse = await createCustomer(customerRequest);
     if (customerResponse.status === 'Success' && customerResponse.customerId) {
         customerId = customerResponse.customerId;
@@ -1052,22 +1052,14 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
                 user_id: input.CommerceToolsUserId,
                 customer_id: customerId,
             });
-
-            if (result.success) {
-                await httpUtils.addPaydockLog({
-                    paydockChargeID: input.PaydockTransactionId,
-                    operation: 'Save Customer Vault Token',
-                    status: 'Success',
-                    message: 'Customer Vault Token saved successfully'
-                })
-            } else {
-                await httpUtils.addPaydockLog({
-                    paydockChargeID: input.PaydockTransactionId,
-                    operation: 'Save Customer Vault Token',
-                    status: 'Failure',
-                    message: result.error
-                })
-            }
+            const messageLog = result.success ? 'Customer Vault Token saved successfully' : result.error
+            const statusLog = result.success ? 'Success' : 'Failure'
+            await httpUtils.addPaydockLog({
+                paydockChargeID: input.PaydockTransactionId,
+                operation: 'Save Customer Vault Token',
+                status: statusLog,
+                message: messageLog
+            })
         }
     } else {
         await httpUtils.addPaydockLog({
@@ -1148,7 +1140,7 @@ async function insertOrUpdateUserVaultToken({unique_key, user_id, customer_id, t
 
     try {
         const response = await ctpClient.fetchById(ctpClient.builder.customers, user_id);
-        if (response && response.body) {
+        if (response?.body) {
 
             let version = response.body.version;
             let actions = [{
@@ -1204,7 +1196,7 @@ async function getCustomerIdByVaultToken(user_id, vault_token) {
     try {
         const response = await ctpClient.fetchById(ctpClient.builder.customers, user_id);
 
-        if (response && response.body) {
+        if (response?.body) {
             const userVaultTokens = response.body?.custom?.fields?.userVaultTokens ? JSON.parse(response.body?.custom?.fields?.userVaultTokens) : {};
 
             for (const value of Object.values(userVaultTokens)) {
@@ -1471,7 +1463,7 @@ async function getUserVaultTokens(user_id) {
     try {
         const response = await ctpClient.fetchById(ctpClient.builder.customers, user_id);
 
-        if (response && response.body) {
+        if (response?.body) {
             const userVaultTokens = response.body?.custom?.fields?.userVaultTokens ? JSON.parse(response.body?.custom?.fields?.userVaultTokens) : {};
 
             for (const value of Object.values(userVaultTokens)) {

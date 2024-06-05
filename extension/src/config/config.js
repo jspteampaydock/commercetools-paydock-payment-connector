@@ -33,11 +33,11 @@ async function getPaydockApiUrl() {
 
 function getExtensionConfig() {
     return {
-        clientId: config.clientId ?? 'kjQW8-nXHq4CfKVdFzEjUl6c',
-        clientSecret: config.clientSecret ?? 'Z1B_FP71UbE8xwcdAy_Q5FR7ztHSZZRJ',
-        projectKey: config.projectKey ?? 'paydockecomm',
-        apiUrl: config.apiUrl ?? 'https://api.europe-west1.gcp.commercetools.com',
-        authUrl: config.authUrl ?? 'https://auth.europe-west1.gcp.commercetools.com'
+        clientId: config.clientId,
+        clientSecret: config.clientSecret ,
+        projectKey: config.projectKey,
+        apiUrl: config.apiUrl,
+        authUrl: config.authUrl
     }
 }
 
@@ -65,9 +65,7 @@ async function getPaydockConfig(type = 'all', disableCache = false) {
     }
     switch (type) {
         case 'connection':
-            // eslint-disable-next-line no-case-declarations
-            const isSandboxConnection = paydockConfig['sandbox']?.sandbox_mode ?? false;
-            if (isSandboxConnection === 'Yes') {
+            if (paydockConfig['sandbox']?.sandbox_mode === 'Yes') {
                 paydockConfig['sandbox'].api_url = 'https://api-sandbox.paydock.com';
                 return paydockConfig['sandbox'] ?? {};
             }

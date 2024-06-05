@@ -22,7 +22,7 @@ function deleteCustomFieldAction(name) {
 
 
 function getPaydockStatus(paymentMethod, responseBodyJson) {
-    let paydockStatus =  c.STATUS_TYPES.PENDING;
+    let paydockStatus;
     switch (paymentMethod) {
         case 'bank_account':
             paydockStatus = responseBodyJson.status === 'requested' ? c.STATUS_TYPES.REQUESTED : c.STATUS_TYPES.FAILED;

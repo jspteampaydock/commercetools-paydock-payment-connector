@@ -2,7 +2,7 @@ import utils from './src/utils.js'
 import paymentHandler from './src/paymentHandler/payment-handler.js'
 import { getAuthorizationRequestHeader } from './src/validator/authentication.js'
 
-let handler = async (event) => {
+const handler = async (event) => {
   let paymentObj = {}
   try {
     const body = event.body ? JSON.parse(event.body) : event

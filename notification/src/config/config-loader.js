@@ -14,7 +14,7 @@ function loadFromPaydockIntegrationEnvVar() {
   } catch (e) {
     throw new Error(
         // eslint-disable-next-line max-len
-        `Paydock integration configuration is not provided in the JSON format${ process.env.PAYDOCK_INTEGRATION_CONFIG}`,
+        `Paydock integration ${e} configuration is not provided in the JSON format${ process.env.PAYDOCK_INTEGRATION_CONFIG}`,
     )
   }
 }

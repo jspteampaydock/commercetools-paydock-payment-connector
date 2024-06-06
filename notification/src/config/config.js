@@ -7,7 +7,7 @@ let ctpClient;
 
 
 function getNotificationUrl() {
-  return  process.env.CONNECT_SERVICE_URL ?? 'https://notification.paydock-commercetools-app.jetsoftpro.dev'
+  return  process.env.CONNECT_SERVICE_URL  ?? config.notificationBaseUrl;
 }
 
 async function getCtpClient() {
@@ -66,18 +66,16 @@ async function getPaydockConfig(type = 'all') {
     case 'connection':
       // eslint-disable-next-line no-case-declarations
       if (paydockConfig['sandbox']?.sandbox_mode) {
-        paydockConfig['sandbox'].api_url = 'https://api-sandbox.paydock.com'
+        paydockConfig['sandbox'].api_url =  config.paydockSandboxUrl
         return paydockConfig['sandbox'] ?? {}
       }
-      paydockConfig['live'].api_url = 'https://api.paydock.com'
+      paydockConfig['live'].api_url = config.paydockLiveUrl
       return paydockConfig['live'] ?? {}
-
     case 'widget:':
       return paydockConfig['live'] ?? {}
     default:
       return paydockConfig
   }
-
 }
 
 function loadAndValidateConfig() {
@@ -96,7 +94,6 @@ loadAndValidateConfig()
 export default {
   getModuleConfig,
   getPaydockConfig,
-  getNotificationUrl,
   getPaydockApiUrl,
   getCtpClient,
   getNotificationConfig

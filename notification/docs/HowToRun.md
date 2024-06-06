@@ -41,7 +41,10 @@ echo 'PAYDOCK_INTEGRATION_CONFIG={
    "clientSecret":"[YOUR_CLIENT_SECRET]",
    "projectKey":"[YOUR_PROJECT_KEY]",
    "apiUrl":"https://api.[REGION_ID].gcp.commercetools.com",
-   "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com"
+   "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com",
+   "paydockLiveUrl": "[API_PAYDOCK_URL]",
+   "paydockSandboxUrl":"[API_PAYDOCK_SANDBOX_URL]",
+   "extensionBaseUrl": "[EXTENSION_BASE_URL]"
 }' > ./notification/.env
 ```
 
@@ -92,7 +95,10 @@ echo 'PAYDOCK_INTEGRATION_CONFIG={
    "clientSecret":"[YOUR_CLIENT_SECRET]",
    "projectKey":"[YOUR_PROJECT_KEY]",
    "apiUrl":"https://api.[REGION_ID].gcp.commercetools.com",
-   "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com"
+   "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com",
+   "paydockLiveUrl": "[API_PAYDOCK_URL]",
+   "paydockSandboxUrl":"[API_PAYDOCK_SANDBOX_URL]",
+   "extensionBaseUrl": "[EXTENSION_BASE_URL]"
 }' > ./notification/.env
 ```
 

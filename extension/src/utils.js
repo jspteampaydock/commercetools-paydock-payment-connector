@@ -22,7 +22,6 @@ async function addPaydockLog(data) {
     )
 }
 
-
 async function addPaydockHttpLog(data) {
     const logKey = `paydock-http_${Date.now()}`;
 

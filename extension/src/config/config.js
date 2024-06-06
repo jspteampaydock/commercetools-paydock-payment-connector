@@ -6,7 +6,7 @@ let paydockConfig;
 let ctpClient;
 
 function getModuleConfig() {
-    const extensionBaseUrl = process.env.CONNECT_SERVICE_URL ?? 'https://extension.paydock-commercetools-app.jetsoftpro.dev';
+    const extensionBaseUrl = process.env.CONNECT_SERVICE_URL ?? config.extensionBaseUrl;
     return {
         removeSensitiveData: true,
         port: config.port,
@@ -21,7 +21,7 @@ function getModuleConfig() {
 }
 
 async function getCtpClient() {
-    if(!ctpClient){
+    if (!ctpClient) {
         ctpClient = await ctpClientBuilder.get(getExtensionConfig())
     }
     return ctpClient;
@@ -34,7 +34,7 @@ async function getPaydockApiUrl() {
 function getExtensionConfig() {
     return {
         clientId: config.clientId,
-        clientSecret: config.clientSecret ,
+        clientSecret: config.clientSecret,
         projectKey: config.projectKey,
         apiUrl: config.apiUrl,
         authUrl: config.authUrl
@@ -51,12 +51,12 @@ async function getPaydockConfig(type = 'all', disableCache = false) {
         )
         if (responsePaydockConfig.body.results) {
             paydockConfig = {};
-            const results = responsePaydockConfig.body.results.sort((a,b) => {
-                if (a.version > b.version){
+            const results = responsePaydockConfig.body.results.sort((a, b) => {
+                if (a.version > b.version) {
                     return 1;
-                } 
+                }
                 return -1;
-                
+
             });
             results.forEach((element) => {
                 paydockConfig[element.key] = element.value;
@@ -66,10 +66,10 @@ async function getPaydockConfig(type = 'all', disableCache = false) {
     switch (type) {
         case 'connection':
             if (paydockConfig['sandbox']?.sandbox_mode === 'Yes') {
-                paydockConfig['sandbox'].api_url = 'https://api-sandbox.paydock.com';
+                paydockConfig['sandbox'].api_url = config.paydockSandboxUrl
                 return paydockConfig['sandbox'] ?? {};
             }
-            paydockConfig['live'].api_url = 'https://api.paydock.com';
+            paydockConfig['live'].api_url =  config.paydockLiveUrl;
             return paydockConfig['live'] ?? {};
 
         case 'widget:':

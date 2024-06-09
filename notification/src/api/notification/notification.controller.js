@@ -10,7 +10,7 @@ async function handleNotification(request, response) {
     logger.debug(
       `Received non-POST request: ${request.method}. The request will not be processed...`,
     )
-    return utils.sendResponse(response)
+    return utils.sendResponse(response, 200)
   }
   try {
     const notificationResponse = await utils.getNotificationFromRequest(request);

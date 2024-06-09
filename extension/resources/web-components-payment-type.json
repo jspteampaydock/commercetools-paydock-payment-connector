@@ -6,7 +6,7 @@
   "resourceTypeIds": ["payment"],
   "fieldDefinitions": [
     {
-      "name": "commercetoolsProjectKey",
+      "name": "CommercetoolsProjectKey",
       "label": {
         "en": "Commercetools project key"
       },

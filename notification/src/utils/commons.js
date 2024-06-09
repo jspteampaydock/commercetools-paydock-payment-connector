@@ -26,7 +26,7 @@ async function collectRequestData(request) {
   })
 }
 
-function sendResponse(response, statusCode = 200, headers, data) {
+function sendResponse(response, statusCode, headers, data) {
   response.writeHead(statusCode, headers)
   response.end(data)
 }

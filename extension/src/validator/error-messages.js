@@ -18,7 +18,7 @@ export default {
   MAKE_PAYMENT_REQUEST_MISSING_REFERENCE:
     'Required "reference" field is missing in makePaymentRequest.',
   MISSING_REQUIRED_FIELDS_CTP_PROJECT_KEY:
-    'Required field "commercetoolsProjectKey" is missing or empty.',
+    'Required field "CommercetoolsProjectKey" is missing or empty.',
   UNAUTHORIZED_REQUEST: 'The request is unauthorized.',
   MISSING_CREDENTIAL:
     'Credential is missing in required project configuration.',

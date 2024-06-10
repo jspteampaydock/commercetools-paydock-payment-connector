@@ -1,7 +1,7 @@
 import {serializeError} from 'serialize-error'
 import VError from 'verror'
 import config from '../../config/config.js'
-import {addPaydockHttpLog, addPaydockLog} from '../../utils/logger.js'
+import {addPowerboardHttpLog, addPowerboardLog} from '../../utils/logger.js'
 import ctp from '../../utils/ctp.js'
 import customObjectsUtils from '../../utils/custom-objects-utils.js'
 
@@ -26,7 +26,7 @@ async function processNotification(
             result.status = 'Failure'
             result.message = 'Payment not found'
         } else if (event !== undefined) {
-            addPaydockHttpLog(notificationResponse)
+            addPowerboardHttpLog(notificationResponse)
             switch (event) {
                 case 'transaction_success':
                 case 'transaction_failure':
@@ -63,6 +63,7 @@ async function processNotification(
 async function processWebhook(event, payment, notification, ctpClient) {
     const result = {}
     const {status, paymentStatus, orderStatus} = await getNewStatuses(notification)
+
     const chargeId = notification._id
     const currentPayment = payment
     const currentVersion = payment.version
@@ -74,7 +75,7 @@ async function processWebhook(event, payment, notification, ctpClient) {
     const updateActions = [
         {
             action: 'setCustomField',
-            name: 'PaydockPaymentStatus',
+            name: 'PowerboardPaymentStatus',
             value: status
         },
         {
@@ -95,8 +96,8 @@ async function processWebhook(event, payment, notification, ctpClient) {
         result.message = error
     }
 
-    await addPaydockLog({
-        paydockChargeID: chargeId,
+    await addPowerboardLog({
+        powerboardChargeID: chargeId,
         operation,
         status: result.status,
         message: result.message ?? ''
@@ -104,30 +105,24 @@ async function processWebhook(event, payment, notification, ctpClient) {
     return result
 }
 
-
 async function processFraudNotification(event, payment, notification, ctpClient) {
-    const result = {}
-
-    let chargeId = notification._id
-    const fraudChargeId = notification._id ?? null;
-
+    let result = {}
     const currentPayment = payment
     const currentVersion = payment.version
-    const cacheName = `paydock_fraud_${notification.reference}`
+    const cacheName = `powerboard_fraud_${notification.reference}`
 
-    let updateActions = [];
     let operation = notification.type
     operation = operation ? operation.charAt(0).toUpperCase() + operation.slice(1).toLowerCase() : 'Undefined';
 
     if (notification.status !== 'complete') {
         result.message = operation
-        result.paydockStatus = 'paydock-failed'
+        result.powerboardStatus = 'powerboard-failed'
         await customObjectsUtils.removeItem(cacheName)
 
-        updateActions = [{
+        const updateActions = [{
             action: 'setCustomField',
-            name: 'PaydockPaymentStatus',
-            value: result.paydockStatus
+            name: 'PowerboardPaymentStatus',
+            value: result.powerboardStatus
         },
             {
                 action: 'setCustomField',
@@ -144,130 +139,149 @@ async function processFraudNotification(event, payment, notification, ctpClient)
             result.message = error
         }
     } else {
-        let cacheData = await customObjectsUtils.getItem(cacheName)
-        if (cacheData) {
-            cacheData = JSON.parse(cacheData)
-
-            const request = await generateChargeRequest(notification, cacheData, fraudChargeId)
-            const isDirectCharge = cacheData.capture
-            await customObjectsUtils.removeItem(cacheName)
-            const response = await createCharge(request, {directCharge: isDirectCharge}, true)
-            chargeId = response?.resource?.data?._id ?? 0
-            chargeId = chargeId === 0 ? response?.resource?.data?.id : chargeId
-
-            if (response?.error) {
-                result.status = 'UnfulfilledCondition'
-                result.message = `Can't charge.${errorMessageToString(response)}`
-
-                await addPaydockLog({
-                    paydockChargeID: chargeId,
-                    operation: 'Charge',
-                    status: result.status,
-                    message: result.message
-                })
-                return result
-            }
-
-            if (cacheData._3ds) {
-                const attachResponse = await cardFraudAttach({fraudChargeId, chargeId})
-                if (attachResponse?.error) {
-                    result.status = 'UnfulfilledCondition'
-                    result.message = `Can't fraud attach.${errorMessageToString(attachResponse)}`
-
-                    await addPaydockLog({
-                        paydockChargeID: chargeId,
-                        operation: 'Fraud Attach',
-                        status: result.status,
-                        message: result.message
-                    })
-                    return result
-                }
-            }
-
-
-            let status = response?.resource?.data?.status
-            status = status ? status.toLowerCase() : 'undefined'
-            status = status.charAt(0).toUpperCase() + status.slice(1)
-
-            operation = response?.resource?.data?.type
-            operation = operation ? operation.toLowerCase() : 'undefined'
-            operation = operation.charAt(0).toUpperCase() + operation.slice(1)
-
-            const isAuthorization = response?.resource?.data?.authorization ?? 0
-            let isCompleted = false
-            let commerceToolsPaymentStatus
-
-            if (isAuthorization && ['Pending', 'Pre_authentication_pending'].includes(status)) {
-                result.paydockStatus = 'paydock-authorize'
-                commerceToolsPaymentStatus = 'Pending'
-            } else {
-                isCompleted = status === 'Complete'
-                result.paydockStatus = isCompleted ? 'paydock-paid' : 'paydock-pending'
-                commerceToolsPaymentStatus = isCompleted ? 'Paid' : 'Pending'
-            }
-
-            updateActions = [
-                {
-                    action: 'setCustomField',
-                    name: 'PaydockPaymentStatus',
-                    value: result.paydockStatus
-                },
-                {
-                    action: 'setCustomField',
-                    name: 'PaydockTransactionId',
-                    value: chargeId
-                }
-            ]
-
-            try {
-                await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
-                await updateOrderStatus(ctpClient, currentPayment.id, commerceToolsPaymentStatus, 'Open');
-
-                result.status = 'Success'
-
-                await addPaydockLog({
-                    paydockChargeID: chargeId,
-                    operation,
-                    status: result.status,
-                    message: ''
-                })
-
-                return result
-            } catch (error) {
-                result.status = 'Failure'
-                result.message = error
-
-                updateActions = [
-                    {
-                        action: 'setCustomField',
-                        name: 'PaydockPaymentStatus',
-                        value: 'paydock-failed'
-                    },
-                    {
-                        action: 'setCustomField',
-                        name: 'PaydockTransactionId',
-                        value: chargeId
-                    },
-                    {
-                        action: 'setCustomField',
-                        name: 'PaymentExtensionRequest',
-                        value: JSON.stringify({
-                            action: 'FromNotification',
-                            request: {}
-                        })
-                    }
-                ]
-                await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
-                await updateOrderStatus(ctpClient, currentPayment.id, 'Failed', 'Cancelled');
-
-            }
-        } else {
-            result.message = 'Fraud data not found in localstorage'
-        }
+        result = await processFraudNotificationComplete(event, payment, notification, ctpClient);
     }
     return result
 }
 
+
+async function processFraudNotificationComplete(event, payment, notification, ctpClient) {
+
+    const fraudChargeId = notification._id ?? null;
+    const cacheName = `powerboard_fraud_${notification.reference}`
+    let cacheData = await customObjectsUtils.getItem(cacheName)
+    if (!cacheData) {
+        return {message: 'Fraud data not found in local storage'};
+    }
+
+    cacheData = JSON.parse(cacheData)
+    const request = await generateChargeRequest(notification, cacheData, fraudChargeId)
+    const isDirectCharge = cacheData.capture
+    await customObjectsUtils.removeItem(cacheName)
+    const response = await createCharge(request, {directCharge: isDirectCharge}, true)
+    const updatedChargeId = extractChargeIdFromNotification(response);
+
+    if (response?.error) {
+        result.status = 'UnfulfilledCondition'
+        result.message = `Can't charge.${errorMessageToString(response)}`
+
+        await addPowerboardLog({
+            powerboardChargeID: updatedChargeId,
+            operation: 'Charge',
+            status: result.status,
+            message: result.message
+        })
+        return result
+    }
+
+    if (cacheData._3ds) {
+        const attachResponse = await cardFraudAttach({fraudChargeId, updatedChargeId})
+        if (attachResponse?.error) {
+            result.status = 'UnfulfilledCondition'
+            result.message = `Can't fraud attach.${errorMessageToString(attachResponse)}`
+
+            await addPowerboardLog({
+                powerboardChargeID: updatedChargeId,
+                operation: 'Fraud Attach',
+                status: result.status,
+                message: result.message
+            })
+            return result
+        }
+    }
+
+    return await handleFraudNotification(response, updatedChargeId, ctpClient, payment);
+}
+
+function extractChargeIdFromNotification(response) {
+    return response?.resource?.data?._id || response?.resource?.data?.id || 0;
+}
+
+async function handleFraudNotification(response, updatedChargeId, ctpClient, payment) {
+    let updateActions = [];
+
+    const currentPayment = payment
+    const currentVersion = payment.version
+    let status = response?.resource?.data?.status
+    status = status ? status.toLowerCase() : 'undefined'
+    status = status.charAt(0).toUpperCase() + status.slice(1)
+
+    let operation = response?.resource?.data?.type
+    operation = operation ? operation.toLowerCase() : 'undefined'
+    operation = operation.charAt(0).toUpperCase() + operation.slice(1)
+
+    const isAuthorization = response?.resource?.data?.authorization ?? 0
+
+    const {commerceToolsPaymentStatus, powerboardStatus} = determineFraudPaymentStatus(isAuthorization, status);
+    result.powerboardStatus = powerboardStatus
+
+    updateActions = [
+        {
+            action: 'setCustomField',
+            name: 'PowerboardPaymentStatus',
+            value: result.powerboardStatus
+        },
+        {
+            action: 'setCustomField',
+            name: 'PowerboardTransactionId',
+            value: chargeId
+        }
+    ]
+
+    try {
+        await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+        await updateOrderStatus(ctpClient, currentPayment.id, commerceToolsPaymentStatus, 'Open');
+
+        result.status = 'Success'
+
+        await addPowerboardLog({
+            powerboardChargeID: chargeId,
+            operation,
+            status: result.status,
+            message: ''
+        })
+
+        return result
+    } catch (error) {
+        result.status = 'Failure'
+        result.message = error
+
+        updateActions = [
+            {
+                action: 'setCustomField',
+                name: 'PowerboardPaymentStatus',
+                value: 'powerboard-failed'
+            },
+            {
+                action: 'setCustomField',
+                name: 'PowerboardTransactionId',
+                value: chargeId
+            },
+            {
+                action: 'setCustomField',
+                name: 'PaymentExtensionRequest',
+                value: JSON.stringify({
+                    action: 'FromNotification',
+                    request: {}
+                })
+            }
+        ]
+        await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+        await updateOrderStatus(ctpClient, currentPayment.id, 'Failed', 'Cancelled');
+    }
+    return result;
+}
+
+function determineFraudPaymentStatus(isAuthorization, status) {
+    if (isAuthorization && ['Pending', 'Pre_authentication_pending'].includes(status)) {
+        return {paymentStatus: 'Pending', powerboardStatus: 'powerboard-authorize'};
+    }
+    const isCompleted = status === 'Complete';
+    return {
+        paymentStatus: isCompleted ? 'Paid' : 'Pending',
+        powerboardStatus: isCompleted ? 'powerboard-paid' : 'powerboard-pending'
+    };
+}
 
 async function generateChargeRequest(notification, cacheData, fraudChargeId) {
     const paymentSource = notification.customer.payment_source
@@ -324,7 +338,7 @@ async function createCharge(data, params = {}, returnObject = false) {
             url += '?capture=false'
         }
 
-        const {response} = await callPaydock(url, data, 'POST')
+        const {response} = await callPowerboard(url, data, 'POST')
 
         if (returnObject) {
             return response
@@ -353,112 +367,113 @@ async function createCharge(data, params = {}, returnObject = false) {
 }
 
 async function processRefundSuccessNotification(event, payment, notification, ctpClient) {
+
+    if (!notification.transaction || notification.from_webhook) {
+        return {status: 'Failure'};
+    }
     const result = {}
-    let paydockStatus
-    if (!notification.transaction || (notification.from_webhook !== undefined && notification.from_webhook)) {
-        result.status = 'Failure'
-    } else {
-        let chargeId = notification._id
-        const currentPayment = payment
-        const currentVersion = payment.version
+    let powerboardStatus
+    let chargeId = notification._id
+    const currentPayment = payment
+    const currentVersion = payment.version
 
-        let prevResponseOfExtension = currentPayment?.custom?.fields?.PaymentExtensionResponse
-        if (prevResponseOfExtension) {
-            prevResponseOfExtension = JSON.parse(prevResponseOfExtension)
-            const prevResponseOfExtensionMessage = prevResponseOfExtension?.message
-            if (prevResponseOfExtensionMessage === 'Merchant refunded money') {
-                await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, [
-                    {
-                        action: 'setCustomField',
-                        name: 'PaymentExtensionResponse',
-                        value: null
-                    },
-                    {
-                        action: 'setCustomField',
-                        name: 'PaymentExtensionRequest',
-                        value: JSON.stringify({
-                            action: 'FromNotification',
-                            request: {}
-                        })
-                    }
-                ])
-                return {status: 'Success', message: ''}
-            }
-        }
-
-        let fraction = 1;
-        if (currentPayment.amountPlanned.type === 'centPrecision') {
-            fraction = 10 ** currentPayment.amountPlanned.fractionDigits ?? 1;
-        }
-        const orderAmount = currentPayment.amountPlanned.centAmount / fraction;
-
-        let oldRefundAmount = currentPayment?.custom?.fields?.RefundedAmount
-        oldRefundAmount = oldRefundAmount ?? 0
-        const refundAmount = parseFloat(notification.transaction.amount) ?? 0
-        let notificationStatus = notification.status
-        notificationStatus = notificationStatus ? notificationStatus.toLowerCase() : 'undefined'
-        notificationStatus = notificationStatus.charAt(0).toUpperCase() + notificationStatus.slice(1)
-
-        let operation = notification.type
-        operation = operation ? operation.toLowerCase() : 'undefined'
-        operation.charAt(0).toUpperCase() + operation.slice(1)
-        if (['REFUNDED', 'REFUND_REQUESTED'].includes(notificationStatus.toUpperCase())) {
-            paydockStatus = (oldRefundAmount + refundAmount) < orderAmount ? 'paydock-p-refund' : 'paydock-refunded'
-        }
-        if (paydockStatus && refundAmount) {
-            const refunded = paydockStatus === 'paydock-refunded' ? orderAmount : oldRefundAmount + refundAmount;
-            const updateActions = [
-                {
-                    action: 'setCustomField',
-                    name: 'PaydockPaymentStatus',
-                    value: paydockStatus
-                },
-                {
-                    action: 'setCustomField',
-                    name: 'RefundedAmount',
-                    value: refunded
-                },
-                {
-                    action: 'setCustomField',
-                    name: 'PaymentExtensionRequest',
-                    value: JSON.stringify({
-                        action: 'FromNotification',
-                        request: {}
-                    })
-                }
-            ]
-
-            if (chargeId) {
-                updateActions.push({
-                    action: 'setCustomField',
-                    name: 'PaydockTransactionId',
-                    value: chargeId
+    if (wasMerchantRefundedFromCommercetools(currentPayment)) {
+        await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, [
+            {
+                action: 'setCustomField',
+                name: 'PaymentExtensionResponse',
+                value: null
+            },
+            {
+                action: 'setCustomField',
+                name: 'PaymentExtensionRequest',
+                value: JSON.stringify({
+                    action: 'FromNotification',
+                    request: {}
                 })
             }
-
-            try {
-                await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
-                await updateOrderStatus(ctpClient, currentPayment.id, 'Paid', 'Cancelled');
-
-                result.status = 'Success'
-                result.message = `Refunded ${refunded}`
-            } catch (error) {
-                result.status = 'Failure'
-                result.message = error
-            }
-        }
-        chargeId = chargeId ?? currentPayment.custom.fields.PaydockTransactionId
-        await addPaydockLog({
-            paydockChargeID: chargeId,
-            operation: paydockStatus,
-            status: result.status,
-            message: result.message ?? ''
-        })
+        ])
+        return {status: 'Success', message: ''}
     }
+    const refundAmount = parseFloat(notification.transaction.amount) || 0
+    const orderAmount = calculateOrderAmount(payment);
+    let oldRefundAmount = parseFloat(payment?.custom?.fields?.RefundedAmount) || 0;
+    const notificationStatus = formatNotificationStatus(notification.status);
+
+    if (['REFUNDED', 'REFUND_REQUESTED'].includes(notificationStatus.toUpperCase())) {
+        powerboardStatus = (oldRefundAmount + refundAmount) < orderAmount ? 'powerboard-p-refund' : 'powerboard-refunded'
+    }
+    if (powerboardStatus && refundAmount) {
+        const refunded = calculateRefundedAmount(powerboardStatus, oldRefundAmount, refundAmount, orderAmount);
+        const updateActions = [
+            {
+                action: 'setCustomField',
+                name: 'PowerboardPaymentStatus',
+                value: powerboardStatus
+            },
+            {
+                action: 'setCustomField',
+                name: 'RefundedAmount',
+                value: refunded
+            },
+            {
+                action: 'setCustomField',
+                name: 'PaymentExtensionRequest',
+                value: JSON.stringify({
+                    action: 'FromNotification',
+                    request: {}
+                })
+            }
+        ]
+
+        if (chargeId) {
+            updateActions.push({
+                action: 'setCustomField',
+                name: 'PowerboardTransactionId',
+                value: chargeId
+            })
+        }
+
+        try {
+            await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+            await updateOrderStatus(ctpClient, currentPayment.id, 'Paid', 'Cancelled');
+
+            result.status = 'Success'
+            result.message = `Refunded ${refunded}`
+        } catch (error) {
+            result.status = 'Failure'
+            result.message = error
+        }
+    }
+    chargeId = chargeId ?? currentPayment.custom.fields.PowerboardTransactionId
+    await addPowerboardLog({
+        powerboardChargeID: chargeId,
+        operation: powerboardStatus,
+        status: result.status,
+        message: result.message ?? ''
+    })
+
     return result
 
 }
 
+function calculateRefundedAmount(powerboardStatus, oldRefundAmount, refundAmount, orderAmount) {
+    return powerboardStatus === 'powerboard-refunded' ? orderAmount : oldRefundAmount + refundAmount;
+}
+
+function calculateOrderAmount(payment) {
+    const fraction = payment.amountPlanned.type === 'centPrecision' ? Math.pow(10, payment.amountPlanned.fractionDigits) : 1;
+    return payment.amountPlanned.centAmount / fraction;
+}
+
+function wasMerchantRefundedFromCommercetools(payment) {
+    const prevResponse = payment?.custom?.fields?.PaymentExtensionResponse;
+    return prevResponse && JSON.parse(prevResponse)?.message === 'Merchant refunded money';
+}
+
+function formatNotificationStatus(status) {
+    return status ? status.toLowerCase().charAt(0).toUpperCase() + status.slice(1).toLowerCase() : 'Undefined';
+}
 
 async function updateOrderStatus(
     ctpClient,
@@ -482,7 +497,6 @@ async function updateOrderStatus(
         await ctpClient.update(ctpClient.builder.orders, order.id, order.version, updateOrderActions)
     }
 }
-
 
 async function getPaymentByMerchantReference(
     ctpClient,
@@ -515,59 +529,59 @@ async function getNewStatuses(notification) {
     status = status ? status.toLowerCase() : 'undefined'
     status = status.charAt(0).toUpperCase() + status.slice(1)
 
-    let paydockPaymentStatus
+    let powerboardPaymentStatus
     let commerceToolsPaymentStatus
     let orderPaymentStatus
 
+
     switch (status.toUpperCase()) {
         case 'COMPLETE':
-            paydockPaymentStatus = 'paydock-paid'
+            powerboardPaymentStatus = 'powerboard-paid'
             commerceToolsPaymentStatus = 'Paid'
             orderPaymentStatus = 'Open'
             break
         case 'PENDING':
         case 'PRE_AUTHENTICATION_PENDING':
-            paydockPaymentStatus = notification.capture ? 'paydock-pending' : 'paydock-authorize'
+            powerboardPaymentStatus = notification.capture ? 'powerboard-pending' : 'powerboard-authorize'
             commerceToolsPaymentStatus = 'Pending'
-            orderPaymentStatus = 'Open'
+            orderPaymentStatus = 'Cancelled'
             break
         case 'CANCELLED':
-            paydockPaymentStatus = 'paydock-cancelled'
+            powerboardPaymentStatus = 'powerboard-cancelled'
             commerceToolsPaymentStatus = 'Failed'
             orderPaymentStatus = 'Cancelled'
             break
         case 'REFUNDED':
-            paydockPaymentStatus = 'paydock-refunded'
+            powerboardPaymentStatus = 'powerboard-refunded'
             commerceToolsPaymentStatus = 'Paid'
             orderPaymentStatus = 'Cancelled'
             break
         case 'REQUESTED':
-            paydockPaymentStatus = 'paydock-requested'
+            powerboardPaymentStatus = 'powerboard-requested'
             commerceToolsPaymentStatus = 'Pending'
             orderPaymentStatus = 'Open'
             break
-        case 'DECLINED':
         case 'FAILED':
-            paydockPaymentStatus = 'paydock-failed'
+        case 'DECLINED':
+            powerboardPaymentStatus = 'powerboard-failed'
             commerceToolsPaymentStatus = 'Failed'
             orderPaymentStatus = 'Cancelled'
             break
         default:
-            paydockPaymentStatus = 'paydock-pending'
+            powerboardPaymentStatus = 'powerboard-pending'
             commerceToolsPaymentStatus = 'Pending'
             orderPaymentStatus = 'Open'
     }
-
-    return {status: paydockPaymentStatus, paymentStatus: commerceToolsPaymentStatus, orderStatus: orderPaymentStatus}
+    return {status: powerboardPaymentStatus, paymentStatus: commerceToolsPaymentStatus, orderStatus: orderPaymentStatus}
 }
 
 
-async function callPaydock(url, data, method) {
+async function callPowerboard(url, data, method) {
     let returnedRequest
     let returnedResponse
-    url = await generatePaydockUrlAction(url)
+    url = await generatePowerboardUrlAction(url)
     try {
-        const {response, request} = await fetchAsyncPaydock(url, data, method)
+        const {response, request} = await fetchAsyncPowerboard(url, data, method)
         returnedRequest = request
         returnedResponse = response
     } catch (err) {
@@ -578,12 +592,12 @@ async function callPaydock(url, data, method) {
     return {request: returnedRequest, response: returnedResponse}
 }
 
-async function generatePaydockUrlAction(url) {
-    const apiUrl = await config.getPaydockApiUrl()
+async function generatePowerboardUrlAction(url) {
+    const apiUrl = await config.getPowerboardApiUrl()
     return apiUrl + url
 }
 
-async function fetchAsyncPaydock(
+async function fetchAsyncPowerboard(
     url,
     requestObj,
     method
@@ -591,7 +605,7 @@ async function fetchAsyncPaydock(
     let response
     let responseBody
     let responseBodyInText
-    const request = await buildRequestPaydock(requestObj, method)
+    const request = await buildRequestPowerboard(requestObj, method)
 
     try {
         response = await fetch(url, request)
@@ -601,7 +615,7 @@ async function fetchAsyncPaydock(
         if (response)
             // Handle non-JSON format response
             throw new Error(
-                `Unable to receive non-JSON format resposne from Paydock API : ${responseBodyInText}`
+                `Unable to receive non-JSON format resposne from Powerboard API : ${responseBodyInText}`
             )
         // Error in fetching URL
         else throw err
@@ -613,11 +627,11 @@ async function fetchAsyncPaydock(
     return {response: responseBody, request}
 }
 
-async function buildRequestPaydock(requestObj, methodOverride) {
-    const paydockCredentials = await config.getPaydockConfig('connection')
+async function buildRequestPowerboard(requestObj, methodOverride) {
+    const powerboardCredentials = await config.getPowerboardConfig('connection')
     const requestHeaders = {
         'Content-Type': 'application/json',
-        'x-user-secret-key': paydockCredentials.credentials_secret_key
+        'x-user-secret-key': powerboardCredentials.credentials_secret_key
     }
 
     const request = {
@@ -631,23 +645,20 @@ async function buildRequestPaydock(requestObj, methodOverride) {
 }
 
 function errorMessageToString(response) {
-    let result = response.error && response.error.message ? ` ${response.error.message}` : ''
-
-    if (response.error && response.error.details) {
-        if (Array.isArray(response.error.details.messages) && response.error.details.messages.length > 0) {
-            return response.error.details.messages[0]
+    let result = ` ${response.error?.message ?? ''}`;
+    if (response.error?.details) {
+        const {details} = response.error;
+        if (Array.isArray(details.messages) && details.messages.length > 0) {
+            return details.messages[0];
         }
-
-        const firstDetail = Object.values(response.error.details)[0]
+        const firstDetail = Object.values(details)[0];
         if (Array.isArray(firstDetail)) {
-            result += ` ${firstDetail.join(',')}`
+            result += ` ${firstDetail.join(',')}`;
         } else {
-            result += ` ${Object.values(response.error.details).join(',')}`
+            result += ` ${Object.values(details).join(',')}`;
         }
     }
-
-    return result
+    return result.trim();
 }
 
 export default {processNotification}
-

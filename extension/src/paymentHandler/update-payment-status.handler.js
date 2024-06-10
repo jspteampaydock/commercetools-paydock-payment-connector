@@ -2,7 +2,7 @@ import {
     createSetCustomFieldAction
 } from './payment-utils.js'
 import c from '../config/constants.js'
-import {updatePaydockStatus} from "../service/web-component-service.js";
+import {updatePowerboardStatus} from "../service/web-component-service.js";
 import httpUtils from "../utils.js";
 import config from "../config/config.js";
 
@@ -14,8 +14,8 @@ async function execute(paymentObject) {
     const actions = []
     const requestBodyJson = paymentExtensionRequest.request;
     let errorMessage
-    let chargeId = paymentObject.custom.fields.PaydockTransactionId;
-    const oldStatus = paymentObject.custom.fields.PaydockPaymentStatus;
+    let chargeId = paymentObject.custom.fields.PowerboardTransactionId;
+    const oldStatus = paymentObject.custom.fields.PowerboardPaymentStatus;
 
     const {
         newStatus,
@@ -39,9 +39,9 @@ async function execute(paymentObject) {
     if (responseAPI?.status === "Success") {
         if (responseAPI.chargeId && responseAPI.chargeId !== chargeId) {
             chargeId = responseAPI.chargeId;
-            actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_PAYDOCK_TRANSACTION_ID, chargeId));
+            actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_Powerboard_TRANSACTION_ID, chargeId));
         }
-        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_PAYDOCK_PAYMENT_STATUS, newStatus));
+        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_Powerboard_PAYMENT_STATUS, newStatus));
         if (refundedAmount) {
             actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_REFUNDED_AMOUNT, refundedAmount));
         }
@@ -56,8 +56,8 @@ async function execute(paymentObject) {
         response.message = "Merchant refunded money"
         message = `Refunded ${requestBodyJson.refundAmount}`
     }
-    await httpUtils.addPaydockLog({
-        paydockChargeID: chargeId,
+    await httpUtils.addPowerboardLog({
+        PowerboardChargeID: chargeId,
         operation: newStatus,
         responseStatus,
         message
@@ -78,13 +78,13 @@ async function processPaymentStatusChange(paymentObject, requestBodyJson) {
     let orderStatus;
     let responseAPI;
     const newStatus = requestBodyJson.newStatus;
-    const oldStatus = paymentObject.custom.fields.PaydockPaymentStatus;
-    const chargeId = paymentObject.custom.fields?.PaydockTransactionId;
+    const oldStatus = paymentObject.custom.fields.PowerboardPaymentStatus;
+    const chargeId = paymentObject.custom.fields?.PowerboardTransactionId;
     let refundedAmount = 0;
     switch (newStatus) {
         case c.STATUS_TYPES.PAID:
             if (oldStatus === c.STATUS_TYPES.AUTHORIZE) {
-                responseAPI = await updatePaydockStatus(`/v1/charges/${chargeId}/capture`, 'post', {});
+                responseAPI = await updatePowerboardStatus(`/v1/charges/${chargeId}/capture`, 'post', {});
             } else {
                 error = "Charge not found or not in the desired state";
             }
@@ -93,7 +93,7 @@ async function processPaymentStatusChange(paymentObject, requestBodyJson) {
             break;
         case c.STATUS_TYPES.CANCELLED:
             if (oldStatus === c.STATUS_TYPES.AUTHORIZE || oldStatus === c.STATUS_TYPES.PAID) {
-                responseAPI = await updatePaydockStatus(`/v1/charges/${chargeId}/capture`, 'delete', {});
+                responseAPI = await updatePowerboardStatus(`/v1/charges/${chargeId}/capture`, 'delete', {});
             } else {
                 error = "Charge not found or not in the desired state";
             }
@@ -105,7 +105,7 @@ async function processPaymentStatusChange(paymentObject, requestBodyJson) {
             if (oldStatus === c.STATUS_TYPES.P_REFUND || oldStatus === c.STATUS_TYPES.PAID) {
                 const oldRefundedAmount = paymentObject?.custom?.fields?.RefundedAmount || 0;
                 refundedAmount = oldRefundedAmount + requestBodyJson.refundAmount;
-                responseAPI = await updatePaydockStatus(`/v1/charges/${chargeId}/refunds`, 'post', {
+                responseAPI = await updatePowerboardStatus(`/v1/charges/${chargeId}/refunds`, 'post', {
                     amount: requestBodyJson.refundAmount,
                     from_webhook: true
                 });

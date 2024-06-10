@@ -18,24 +18,28 @@ function deleteCustomFieldAction(name) {
         value: null
     }
 }
-function getPaydockStatus(paymentMethod, responseBodyJson) {
-    let paydockStatus;
+
+
+
+function getPowerboardStatus(paymentMethod, responseBodyJson) {
+    let powerboardStatus;
     switch (paymentMethod) {
         case 'bank_account':
-            paydockStatus = responseBodyJson.status === 'requested' ? c.STATUS_TYPES.REQUESTED : c.STATUS_TYPES.FAILED;
+            powerboardStatus = responseBodyJson.status === 'requested' ? c.STATUS_TYPES.REQUESTED : c.STATUS_TYPES.FAILED;
             break;
         case 'cart':
             if (responseBodyJson.status === 'complete') {
-                paydockStatus = responseBodyJson.capture ? c.STATUS_TYPES.PAID : c.STATUS_TYPES.AUTHORIZE;
+                powerboardStatus = responseBodyJson.capture ? c.STATUS_TYPES.PAID : c.STATUS_TYPES.AUTHORIZE;
             } else {
-                paydockStatus = c.STATUS_TYPES.FAILED;
+                powerboardStatus = c.STATUS_TYPES.FAILED;
             }
             break;
         default:
-            paydockStatus = c.STATUS_TYPES.PENDING;
+            powerboardStatus = c.STATUS_TYPES.PENDING;
     }
-    return paydockStatus
+    return powerboardStatus
 }
+
 
 function isValidJSON(jsonString) {
     if (typeof jsonString === 'undefined') return true
@@ -131,7 +135,7 @@ export {
     isValidJSON,
     isValidMetadata,
     getPaymentKeyUpdateAction,
-    getPaydockStatus,
+    getPowerboardStatus,
     createChangeTransactionInteractionId,
     createAddTransactionActionByResponse,
     deleteCustomFieldAction

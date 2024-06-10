@@ -7,10 +7,10 @@ import config from './config/config.js'
 
 let logger
 
-async function addPaydockLog(data) {
-    const logKey = `paydock-log_${Date.now()}`;
+async function addPowerboardLog(data) {
+    const logKey = `powerboard-log_${Date.now()}`;
     const logObject = {
-        container: "paydock-logs",
+        container: "powerboard-logs",
         key: logKey,
         value: data
     };
@@ -22,11 +22,12 @@ async function addPaydockLog(data) {
     )
 }
 
-async function addPaydockHttpLog(data) {
-    const logKey = `paydock-http_${Date.now()}`;
+
+async function addPowerboardHttpLog(data) {
+    const logKey = `powerboard-http_${Date.now()}`;
 
     const logObject = {
-        container: "paydock-http-logs",
+        container: "powerboard-http-logs",
         key: logKey,
         value: data
     };
@@ -49,7 +50,7 @@ function collectRequestData(request) {
         request.on('end', () => {
             const dataStr = Buffer.concat(data).toString()
             if (dataStr) {
-                this.addPaydockHttpLog(JSON.parse(dataStr));
+                this.addPowerboardHttpLog(JSON.parse(dataStr));
             }
             resolve(dataStr)
         })
@@ -64,16 +65,16 @@ function sendResponse({response, statusCode = 200, headers, data}) {
 function getLogger() {
     if (!logger)
         logger = bunyan.createLogger({
-            name: 'ctp-paydock-integration-extension',
+            name: 'ctp-powerboard-integration-extension',
             stream: process.stderr,
-            level: config.getModuleConfig().logLevel || bunyan.INFO,
+            level: config.getModuleConfig()?.logLevel || bunyan.INFO,
         })
     return logger
 }
 
 function handleUnexpectedPaymentError(paymentObj, err) {
     const errorMessage =
-        '[paydock-pay-integration-extension] ' +
+        '[powerboard-pay-integration-extension] ' +
         `Unexpected error (Payment ID: ${paymentObj?.id}): ${err.message}.`
     const errorStackTrace = `Unexpected error (Payment ID: ${
         paymentObj?.id
@@ -102,10 +103,8 @@ export default {
     collectRequestData,
     sendResponse,
     getLogger,
-    addPaydockHttpLog,
+    addPowerboardHttpLog,
     handleUnexpectedPaymentError,
     readAndParseJsonFile,
-    addPaydockLog
+    addPowerboardLog
 }
-
-

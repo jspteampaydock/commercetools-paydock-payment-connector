@@ -1,27 +1,25 @@
-# Paydock Payment Connector
+# Powerboard Payment Connector for commercetools
 
 ## Overview
 
-Integrate your commercetools with Paydock using the Paydock Payment Connector and efficiently manage your payment processes. This repository is divided into two main modules:
+The Powerboard Payment Connector allows seamless integration between your commercetools platform and Powerboard, enhancing your payment management processes. This repository contains two primary modules:
 
-- **Extension Module**: Serves as middleware, linking commercetools with Paydock. This is configured to trigger on payment creation and updates within commercetools, ensuring efficient event handling by Paydock. 
-  - [Integration Guide](extension/docs/IntegrationGuide.md)  for information how to integrate extension to commercetools.
-  - Instruction [How to run](extension/docs/HowToRun.md)  the extension module.
-- **Notification Module**: Handles asynchronous notifications from Paydock regarding payment status changes such as authorization, charge, refund, and so on. This module updates the corresponding payment status in commercetools.
-    - [Integration Guide](notification/docs/IntegrationGuide.md)  for information how to integrate extension to commercetools.
-    - Instruction [How to run](notification/docs/HowToRun.md)  the extension module.
+### Extension Module
+Acts as middleware to connect commercetools with Powerboard. It triggers on payment creation and updates within commercetools to ensure efficient event handling by Powerboard.
+- [Integration Guide](extension/docs/IntegrationGuide.md): Detailed steps to integrate this module with commercetools.
+- [How to Run](extension/docs/HowToRun.md): Instructions for deploying and running the extension module.
 
-Follow Integration Guide for information how to integrate your shop with this module. For advanced integration flow follow the advanced integration guide.
-Follow How to run the extension module.
+### Notification Module
+Manages asynchronous notifications from Powerboard about payment status changes (e.g., authorization, charge, refund). It updates the corresponding payment status in commercetools.
+- [Integration Guide](notification/docs/IntegrationGuide.md): Information on integrating this module with commercetools.
+- [How to Run](notification/docs/HowToRun.md): Instructions for deploying and running the notification module.
 
-You must have both modules to integrate your commercetools and Paydock.
+**Important**: Both modules are required to fully integrate your commercetools setup with Powerboard.
 
-## See also
-- [Paydock Commercetools Widget](https://github.com/PayDock/e-commerce-commercetools-npm)
-- [Paydock Commercetools Custom Application](https://github.com/PayDock/e-commerce-commercetools-app/)
-- [Paydock website](https://paydock.com/)
+## Additional Resources
+- [Powerboard Commercetools Widget](https://github.com/PayDock/e-commerce-powerboard-commercetools-npm)
+- [Powerboard Commercetools Custom Application](https://github.com/PayDock/e-commerce-powerboard-commercetools-app)
+- [Official Powerboard Website](https://www.commbank.com.au/)
 
 ## License
-
-This repository is available under the [MIT license](LICENSE).
-[README.md](..%2F..%2Fpaydock-prod%2Fe-commerce-commercetools-app%2FREADME.md)
+This project is licensed under the [MIT License](LICENSE).

@@ -2,7 +2,7 @@ import { loadConfig } from './config-loader.js'
 import ctpClientBuilder from '../utils/ctp.js'
 
 let config
-let paydockConfig
+let powerboardConfig
 let ctpClient;
 
 
@@ -32,9 +32,9 @@ function getModuleConfig() {
   }
 }
 
-async function getPaydockApiUrl(){
-  const paydockC = await getPaydockConfig('connection');
-  return paydockC.api_url;
+async function getPowerboardApiUrl(){
+  const powerboardC = await getPowerboardConfig('connection');
+  return powerboardC.api_url;
 }
 
 function getNotificationConfig() {
@@ -47,35 +47,36 @@ function getNotificationConfig() {
   }
 }
 
-async function getPaydockConfig(type = 'all') {
-  if (!paydockConfig) {
+async function getPowerboardConfig(type = 'all') {
+  if (!powerboardConfig) {
     ctpClient = await getCtpClient();
-    const responsePaydockConfig = await ctpClient.fetchById(
+    const responsePowerboardConfig = await ctpClient.fetchById(
       ctpClient.builder.customObjects,
-      'paydockConfigContainer'
+      'powerboardConfigContainer'
     )
-    if (responsePaydockConfig.body.results) {
-      paydockConfig = {}
-      const {results} = responsePaydockConfig.body
+    if (responsePowerboardConfig.body.results) {
+      powerboardConfig = {}
+      const {results} = responsePowerboardConfig.body
       results.forEach((element) => {
-        paydockConfig[element.key] = element.value
+        powerboardConfig[element.key] = element.value
       })
     }
   }
   switch (type) {
     case 'connection':
-      // eslint-disable-next-line no-case-declarations
-      if (paydockConfig['sandbox']?.sandbox_mode) {
-        paydockConfig['sandbox'].api_url =  config.paydockSandboxUrl
-        return paydockConfig['sandbox'] ?? {}
+      if (powerboardConfig['sandbox']?.sandbox_mode === 'Yes') {
+        powerboardConfig['sandbox'].api_url = config.powerboardSandboxUrl;
+        return powerboardConfig['sandbox'] ?? {};
       }
-      paydockConfig['live'].api_url = config.paydockLiveUrl
-      return paydockConfig['live'] ?? {}
+      powerboardConfig['live'].api_url = config.powerboardLiveUrl;
+      return powerboardConfig['live'] ?? {};
+
     case 'widget:':
-      return paydockConfig['live'] ?? {}
+      return powerboardConfig['live'] ?? {};
     default:
-      return paydockConfig
+      return powerboardConfig
   }
+
 }
 
 function loadAndValidateConfig() {
@@ -93,8 +94,8 @@ loadAndValidateConfig()
 // Using default, because the file needs to be exported as object.
 export default {
   getModuleConfig,
-  getPaydockConfig,
-  getPaydockApiUrl,
+  getPowerboardConfig,
+  getPowerboardApiUrl,
   getCtpClient,
   getNotificationConfig
 }

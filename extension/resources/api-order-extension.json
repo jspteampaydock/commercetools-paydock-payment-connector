@@ -1,8 +1,8 @@
 {
-  "key": "paydock-order-extension",
+  "key": "powerboard-order-extension",
   "destination": {
     "type": "HTTP",
-    "url": "${ctpPaydockIntegrationBaseUrl}/create-order"
+    "url": "${ctpPowerboardIntegrationBaseUrl}/create-order"
   },
   "triggers": [
     {

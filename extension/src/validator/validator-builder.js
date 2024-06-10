@@ -13,13 +13,13 @@ function withPayment(paymentObject) {
   return {
     validateMetadataFields() {
       if (!paymentObject.custom) return this
-      if (!isValidMetadata(paymentObject.custom.fields.commercetoolsProjectKey))
+      if (!isValidMetadata(paymentObject.custom.fields.commercetoolsProjectKey) && !isValidMetadata(paymentObject.custom.fields.CommercetoolsProjectKey))
         errors.missingRequiredCtpProjectKey =
           errorMessages.MISSING_REQUIRED_FIELDS_CTP_PROJECT_KEY
       return this
     },
     validateAuthorizationHeader(authToken) {
-      const ctpProjectKey = paymentObject.custom.fields.commercetoolsProjectKey
+      const ctpProjectKey = paymentObject.custom.fields.CommercetoolsProjectKey ?? paymentObject.custom.fields.commercetoolsProjectKey
       const storedCredential = getStoredCredential(ctpProjectKey)
       if (!storedCredential)
         errors.missingCredentials = errorMessages.MISSING_CREDENTIAL

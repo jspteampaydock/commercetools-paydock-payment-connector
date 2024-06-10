@@ -23,7 +23,7 @@ The following steps describe how to install using `docker run...`.
 1. Clone the Repository.
 
 ```
-git clone https://github.com/PayDock/e-commerce-commercetools-payment-connector
+git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment-connector
 ```
 
 2. Navigate to the project-directory.
@@ -36,17 +36,18 @@ cd e-commerce-commercetools-payment-connector
 Navigate to the notification directory and set up the environment variables:
 
 ```
-echo 'PAYDOCK_INTEGRATION_CONFIG={
+echo 'POWERBOARD_INTEGRATION_CONFIG={
    "clientId":"[YOUR_CLIENT_ID]",
    "clientSecret":"[YOUR_CLIENT_SECRET]",
    "projectKey":"[YOUR_PROJECT_KEY]",
    "apiUrl":"https://api.[REGION_ID].gcp.commercetools.com",
    "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com",
-   "paydockLiveUrl": "[API_PAYDOCK_URL]",
-   "paydockSandboxUrl":"[API_PAYDOCK_SANDBOX_URL]",
-   "extensionBaseUrl": "[EXTENSION_BASE_URL]"
-}' > ./notification/.env
+   "powerboardLiveUrl": "[API_POWERBOARD_URL]",
+   "powerboardSandboxUrl":"[API_POWERBOARD_SANDBOX_URL]",
+   "notificationBaseUrl": "[EXTENSION_BASE_URL]"
+}' > ./extension/.env
 ```
+
 
 Replace the placeholder values with your Commercetools API credentials.
 
@@ -58,9 +59,9 @@ Build the following docker images:
 
 5. Launch the Docker container with the following command:
 
-- `docker run -e PAYDOCK_INTEGRATION_CONFIG=xxxxxx -p 8443:8443 commercetools-payment-connector-notification`
+- `docker run -e POWERBOARD_INTEGRATION_CONFIG=xxxxxx -p 8443:8443 commercetools-payment-connector-notification`
 
-6. Replace the placeholder `xxxxxx` for PAYDOCK_INTEGRATION_CONFIG variable  with your Json-escapes string.
+6. Replace the placeholder `xxxxxx` for POWERBOARD_INTEGRATION_CONFIG variable  with your Json-escapes string.
 ###
 
 The Notification Module is accessible at: http://your_domain:8443.
@@ -76,7 +77,7 @@ The following steps describe how to install the modules using `docker compose...
 1. Clone the Repository.
 
 ```
-git clone https://github.com/PayDock/e-commerce-commercetools-payment-connector
+git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment-connector
 ```
 
 2. Navigate to the project-directory.
@@ -90,16 +91,16 @@ cd e-commerce-commercetools-payment-connector
 Navigate to the notification directory and set up the environment variables.
 
 ```
-echo 'PAYDOCK_INTEGRATION_CONFIG={
+echo 'POWERBOARD_INTEGRATION_CONFIG={
    "clientId":"[YOUR_CLIENT_ID]",
    "clientSecret":"[YOUR_CLIENT_SECRET]",
    "projectKey":"[YOUR_PROJECT_KEY]",
    "apiUrl":"https://api.[REGION_ID].gcp.commercetools.com",
    "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com",
-   "paydockLiveUrl": "[API_PAYDOCK_URL]",
-   "paydockSandboxUrl":"[API_PAYDOCK_SANDBOX_URL]",
-   "extensionBaseUrl": "[EXTENSION_BASE_URL]"
-}' > ./notification/.env
+   "powerboardLiveUrl": "[API_POWERBOARD_URL]",
+   "powerboardSandboxUrl":"[API_POWERBOARD_SANDBOX_URL]",
+   "notificationBaseUrl": "[EXTENSION_BASE_URL]"
+}' > ./extension/.env
 ```
 
 Replace the placeholder values with your Commercetools API credentials.
@@ -107,7 +108,7 @@ Replace the placeholder values with your Commercetools API credentials.
 
 4. Build the docker images and run the application.
 
-* Replace the placeholder `xxxxxx` for PAYDOCK_INTEGRATION_CONFIG variable in **./docker-compose.yml** with your Json-escapes string.
+* Replace the placeholder `xxxxxx` for POWERBOARD_INTEGRATION_CONFIG variable in **./docker-compose.yml** with your Json-escapes string.
 
 
 * Launch docker-compose. The docker images will be built automatically:

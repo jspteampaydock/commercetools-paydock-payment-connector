@@ -104,7 +104,12 @@ async function setUpClient(config) {
     fetch(uri) {
       return ctpClient.execute(this.buildRequestOptions(uri.build()))
     },
-
+    fetchOrderByNymber(uri, orderNumber) {
+      let url = uri.byKey(orderNumber).build();
+      url = url.replace('/key', '/order-number');
+      url = this.buildRequestOptions(url)
+      return ctpClient.execute(url)
+    },
     fetchById(uri, id) {
       return ctpClient.execute(this.buildRequestOptions(uri.byId(id).build()))
     },
@@ -121,13 +126,6 @@ async function setUpClient(config) {
     },
     fetchByKey(uri, key) {
       return ctpClient.execute(this.buildRequestOptions(uri.byKey(key).build()))
-    },
-
-    fetchOrderByNymber(uri, orderNumber) {
-      let url = uri.byKey(orderNumber).build();
-      url = url.replace('/key', '/order-number');
-      url = this.buildRequestOptions(url)
-      return ctpClient.execute(url)
     },
 
     fetchByKeys(uri, keys) {

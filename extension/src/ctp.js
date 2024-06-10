@@ -113,8 +113,7 @@ async function setUpClient(config) {
         },
 
         fetchByKey(uri, key) {
-            const url = this.buildRequestOptions(uri.byKey(key).build())
-            return ctpClient.execute(url)
+            return ctpClient.execute(this.buildRequestOptions(uri.byKey(key).build()))
         },
         fetchOrderByNymber(uri, orderNumber) {
             let url = uri.byKey(orderNumber).build();

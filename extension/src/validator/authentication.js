@@ -1,7 +1,7 @@
 import config from '../config/config.js'
 
 function getStoredCredential(ctpProjectKey) {
-  const ctpConfig = config.getPaydockConfig(ctpProjectKey)
+  const ctpConfig = config.getPowerboardConfig(ctpProjectKey)
   let storedCredential = null
   if (ctpConfig.authentication) {
     storedCredential = {
@@ -14,13 +14,8 @@ function getStoredCredential(ctpProjectKey) {
 
 function hasValidAuthorizationHeader(storedCredential, authTokenString) {
   if (!authTokenString || authTokenString.indexOf(' ') < 0) return false
-
-  // Split on a space, the original auth looks like  "Basic *********" and we need the 2nd part
   const encodedAuthToken = authTokenString.split(' ')
-
-  // create a buffer and tell it the data coming in is base64
   const decodedAuthToken = Buffer.from(encodedAuthToken[1], 'base64').toString()
-
   const credentialString = decodedAuthToken.split(':')
   const username = credentialString[0]
   const password = credentialString[1]
@@ -40,7 +35,7 @@ function getAuthorizationRequestHeader(request) {
 }
 
 function generateBasicAuthorizationHeaderValue(ctpProjectKey) {
-  const ctpConfig = config.getPaydockConfig(ctpProjectKey)
+  const ctpConfig = config.getPowerboardConfig(ctpProjectKey)
   if (
     ctpConfig?.authentication?.username &&
     ctpConfig?.authentication?.password

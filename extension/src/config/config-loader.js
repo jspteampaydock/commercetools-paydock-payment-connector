@@ -3,18 +3,18 @@ import {config} from "dotenv";
 
 function loadConfig() {
   config();
-  if (process.env.PAYDOCK_INTEGRATION_CONFIG) {
-    return loadFromPaydockIntegrationEnvVar()
+  if (process.env.POWERBOARD_INTEGRATION_CONFIG) {
+    return loadFromPowerboardIntegrationEnvVar()
   }
   return {}
 }
 
-function loadFromPaydockIntegrationEnvVar() {
+function loadFromPowerboardIntegrationEnvVar() {
   try {
-    return JSON.parse(process.env.PAYDOCK_INTEGRATION_CONFIG)
+    return JSON.parse(process.env.POWERBOARD_INTEGRATION_CONFIG)
   } catch (e) {
     throw new Error(
-        `Paydock integration configuration is not provided in the JSON format`,
+      'Powerboard integration configuration is not provided in the JSON format',
     )
   }
 }
